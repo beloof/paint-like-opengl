@@ -1,4 +1,5 @@
 #include <GL/freeglut.h>
+#include <iostream>
 
 #include "canvas.h"
 #include "brush.h"
@@ -6,9 +7,10 @@
 // --- Canvas ---
 const int canvasWidth = 800;
 const int canvasHeight = 600;
-int brushsize = 30;
+int brushsize = 70;
 Canvas canvas(canvasWidth, canvasHeight);
-Brush brush = createCircularBrush(5);
+MaskBrush brush(128, 128);
+
 
 // --- Etat de l'outil ---
 unsigned char currentColor[3] = { 0, 0, 0 }; // noir par défaut
@@ -76,6 +78,12 @@ void keyboard(unsigned char key, int, int) {
 
 
 int main(int argc, char** argv) {
+    try {
+        brush.loadFromFile("assets/brushes/round_soft.png");
+    }
+    catch (const std::exception& e) {
+        std::cerr << e.what() << "\n";
+    }
     canvas.clearCanvas();
 
     glutInit(&argc, argv);

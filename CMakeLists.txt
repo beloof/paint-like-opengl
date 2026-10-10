@@ -14,3 +14,9 @@ add_executable(paint
 )
 
 target_link_libraries(paint PRIVATE OpenGL::GL OpenGL::GLU GLUT::GLUT)
+target_include_directories(paint PRIVATE ${CMAKE_SOURCE_DIR}/third_party/stb)
+
+add_custom_command(TARGET paint POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/assets
+        $<TARGET_FILE_DIR:paint>/assets)

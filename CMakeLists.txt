@@ -7,11 +7,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
 
-add_executable(paint     
-    src/Canvas.cpp
-    src/Brush.cpp
-    src/main.cpp
-)
+file(GLOB SOURCES ${CMAKE_SOURCE_DIR}/src/*.cpp)
+add_executable(paint ${SOURCES})
 
 target_link_libraries(paint PRIVATE OpenGL::GL OpenGL::GLU GLUT::GLUT)
 target_include_directories(paint PRIVATE ${CMAKE_SOURCE_DIR}/third_party/stb)

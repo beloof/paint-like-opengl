@@ -6,4 +6,5 @@ out/
 *.pdb
 .vscode/
 CMakeUserPresets.json
+CMakeSettings.json
 .vs/

@@ -1,99 +1,34 @@
 #include <GL/freeglut.h>
-#include <iostream>
 
-#include "canvas.h"
-#include "brush.h"
+#include "app.h"
+#include "layout.h"
 
-// --- Canvas ---
-const int canvasWidth = 800;
-const int canvasHeight = 600;
-int brushsize = 70;
-Canvas canvas(canvasWidth, canvasHeight);
-MaskBrush brush(128, 128);
+// GLUT callbacks are plain functions, so the app lives in one global
+// and these thin wrappers forward to it.
+static App app;
 
+static void display()                              { app.display(); }
+static void reshape(int w, int h)                  { app.reshape(w, h); }
+static void mouseButton(int b, int s, int x, int y){ app.mouseButton(b, s, x, y); }
+static void mouseMotion(int x, int y)              { app.mouseMotion(x, y); }
+static void passiveMotion(int x, int y)            { app.passiveMotion(x, y); }
+static void keyboard(unsigned char k, int, int)    { app.keyboard(k); }
 
-// --- Etat de l'outil ---
-unsigned char currentColor[3] = { 0, 0, 0 }; // noir par défaut
-
-
-bool mouseDown = false;
-int lastX = -1, lastY = -1;
-
-// --- Utilitaires canvas ---
-
-
-// --- GLUT / rendu ---
-void display() {
-    glClear(GL_COLOR_BUFFER_BIT);
-    glRasterPos2i(-1, -1);
-    glDrawPixels(canvasWidth, canvasHeight, GL_RGB, GL_UNSIGNED_BYTE, canvas.getPixels().data());
-    glutSwapBuffers();
-}
-
-// GLUT donne les coordonnées souris avec l'origine en haut-gauche,
-// alors que le buffer de pixels est indexé bas-gauche (comme OpenGL) :
-// on inverse donc l'axe Y ici.
-int toCanvasY(int glutY) {
-    return canvasHeight - 1 - glutY;
-}
-
-void mouseButton(int button, int state, int x, int y) {
-    if (button != GLUT_LEFT_BUTTON) return;
-
-    if (state == GLUT_DOWN) {
-        mouseDown = true;
-        lastX = x;
-        lastY = toCanvasY(y);
-        canvas.drawBrushLine(lastX, lastY, lastX, lastY, brushsize, currentColor, brush);
-        glutPostRedisplay();
-    }
-    else if (state == GLUT_UP) {
-        mouseDown = false;
-    }
-}
-
-void mouseMotion(int x, int y) {
-    if (!mouseDown) return;
-    int cy = toCanvasY(y);
-    canvas.drawBrushLine(lastX, lastY, x, cy, brushsize, currentColor, brush);
-    lastX = x;
-    lastY = cy;
-    glutPostRedisplay();
-}
-
-void keyboard(unsigned char key, int, int) {
-    switch (key) {
-    case '1': currentColor[0] = 0;   currentColor[1] = 0;   currentColor[2] = 0;   break; // noir
-    case '2': currentColor[0] = 255; currentColor[1] = 0;   currentColor[2] = 0;   break; // rouge
-    case '3': currentColor[0] = 0;   currentColor[1] = 160; currentColor[2] = 0;   break; // vert
-    case '4': currentColor[0] = 0;   currentColor[1] = 0;   currentColor[2] = 255; break; // bleu
-    case 'e': currentColor[0] = 255; currentColor[1] = 255; currentColor[2] = 255; break; // gomme (= blanc)
-    case '+': brushsize = std::min(brushsize + 1, 50); break;
-    case '-': brushsize = std::max(brushsize - 1, 1);  break;
-    case 'c': canvas.clearCanvas(); break;
-    case 27: exit(0); break; // Echap
-    }
-    glutPostRedisplay();
-}
-
-
-int main(int argc, char** argv) {
-    try {
-        brush.loadFromFile("assets/brushes/round_soft.png");
-    }
-    catch (const std::exception& e) {
-        std::cerr << e.what() << "\n";
-    }
-    canvas.clearCanvas();
+int main(int argc, char** argv)
+{
+    app.init();
 
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
-    glutInitWindowSize(canvasWidth, canvasHeight);
+    glutInitWindowSize(layout::winW, layout::winH);
     glutCreateWindow("Paint-like OpenGL");
+    app.initGL();
 
     glutDisplayFunc(display);
+    glutReshapeFunc(reshape);
     glutMouseFunc(mouseButton);
     glutMotionFunc(mouseMotion);
+    glutPassiveMotionFunc(passiveMotion);
     glutKeyboardFunc(keyboard);
 
     glutMainLoop();

@@ -3,13 +3,15 @@
 #include <vector>
 
 // Abstract interface: a brush knows how to apply one "dab" to a canvas.
+// (cx, cy) is the dab center in continuous coordinates: pixel (x, y) covers
+// [x, x+1) x [y, y+1), so its center is (x + 0.5, y + 0.5).
 class Brush
 {
 public:
     virtual ~Brush() = default;
 
     virtual void applyToCanvas(
-        int cx, int cy,
+        float cx, float cy,
         float size,
         const unsigned char color[3],
         std::vector<unsigned char>& canvasPixels,
@@ -37,7 +39,7 @@ public:
     void loadFromFile(const std::string& filename);
 
     void applyToCanvas(
-        int cx, int cy,
+        float cx, float cy,
         float size,
         const unsigned char color[3],
         std::vector<unsigned char>& canvasPixels,
@@ -55,7 +57,7 @@ public:
     explicit SoftBrush(float hardness = 0.5f) : hardness(hardness) {}
 
     void applyToCanvas(
-        int cx, int cy,
+        float cx, float cy,
         float size,
         const unsigned char color[3],
         std::vector<unsigned char>& canvasPixels,

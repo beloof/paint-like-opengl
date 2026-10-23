@@ -15,8 +15,9 @@ void Brush::blendPixel(
 {
     for (int c = 0; c < 3; c++)
     {
+        // +0.5 rounds instead of truncating, so many low-opacity dabs don't drift darker.
         canvasPixels[index + c] = (unsigned char)(
-            canvasPixels[index + c] * (1.0f - opacity) + color[c] * opacity);
+            canvasPixels[index + c] * (1.0f - opacity) + color[c] * opacity + 0.5f);
     }
 }
 
@@ -59,44 +60,55 @@ void MaskBrush::loadFromFile(const std::string& filename)
 }
 
 void MaskBrush::applyToCanvas(
-    int cx, int cy,
+    float cx, float cy,
     float size,
     const unsigned char color[3],
     std::vector<unsigned char>& canvasPixels,
     int canvasWidth, int canvasHeight) const
 {
-    int xmin = (int)std::floor(cx - size / 2);
-    int ymin = (int)std::floor(cy - size / 2);
-    int xmax = (int)std::ceil(xmin + size);
-    int ymax = (int)std::ceil(ymin + size);
+    const float left = cx - size * 0.5f;
+    const float top  = cy - size * 0.5f;
+
+    // Clip the dab to the canvas once, instead of testing every pixel.
+    const int xmin = std::max(0, (int)std::floor(left));
+    const int ymin = std::max(0, (int)std::floor(top));
+    const int xmax = std::min(canvasWidth,  (int)std::ceil(left + size));
+    const int ymax = std::min(canvasHeight, (int)std::ceil(top + size));
+
+    const float scaleX = width / size;
+    const float scaleY = height / size;
 
     for (int y = ymin; y < ymax; y++)
     {
+        const float py = y + 0.5f;
+        if (py < top || py >= top + size) continue;
+
+        // Row-dependent part of the bilinear sample, computed once per row.
+        const float v = (py - top) * scaleY - 0.5f;
+        int y0 = (int)std::floor(v);
+        const float fy = v - y0;
+        const int y1 = std::min(y0 + 1, height - 1);
+        y0 = std::max(y0, 0);
+        const float* row0 = &mask[y0 * width];
+        const float* row1 = &mask[y1 * width];
+
         for (int x = xmin; x < xmax; x++)
         {
-            if (x < 0 || x >= canvasWidth || y < 0 || y >= canvasHeight)
-                continue;
+            const float px = x + 0.5f;
+            if (px < left || px >= left + size) continue;
 
-            float xpos = (x - xmin + 0.5f) * width / size;
-            float ypos = (y - ymin + 0.5f) * height / size;
-            float fx = xpos - std::floor(xpos);
-            float fy = ypos - std::floor(ypos);
+            const float u = (px - left) * scaleX - 0.5f;
+            int x0 = (int)std::floor(u);
+            const float fx = u - x0;
+            const int x1 = std::min(x0 + 1, width - 1);
+            x0 = std::max(x0, 0);
 
-            int x0 = std::min((int)std::floor(xpos), width - 1);
-            int x1 = std::min((int)std::floor(xpos) + 1, width - 1);
-            int y0 = std::min((int)std::floor(ypos), height - 1);
-            int y1 = std::min((int)std::floor(ypos) + 1, height - 1);
-
-            float opacity =
-                mask[y1 * width + x0] * (1.0f - fx) * fy +
-                mask[y1 * width + x1] * fx * fy +
-                mask[y0 * width + x0] * (1.0f - fx) * (1.0f - fy) +
-                mask[y0 * width + x1] * fx * (1.0f - fy);
+            const float a = row0[x0] * (1.0f - fx) + row0[x1] * fx;
+            const float b = row1[x0] * (1.0f - fx) + row1[x1] * fx;
+            const float opacity = a * (1.0f - fy) + b * fy;
 
             if (opacity > 0.0f)
-            {
                 blendPixel(canvasPixels, (y * canvasWidth + x) * 3, color, opacity);
-            }
         }
     }
 }
@@ -104,31 +116,29 @@ void MaskBrush::applyToCanvas(
 // ---------- SoftBrush ----------
 
 void SoftBrush::applyToCanvas(
-    int cx, int cy,
+    float cx, float cy,
     float size,
     const unsigned char color[3],
     std::vector<unsigned char>& canvasPixels,
     int canvasWidth, int canvasHeight) const
 {
-    float radius = size / 2.0f;
-    int xmin = (int)std::floor(cx - radius);
-    int xmax = (int)std::ceil(cx + radius);
-    int ymin = (int)std::floor(cy - radius);
-    int ymax = (int)std::ceil(cy + radius);
+    const float radius = size * 0.5f;
+    const int xmin = std::max(0, (int)std::floor(cx - radius));
+    const int ymin = std::max(0, (int)std::floor(cy - radius));
+    const int xmax = std::min(canvasWidth,  (int)std::ceil(cx + radius));
+    const int ymax = std::min(canvasHeight, (int)std::ceil(cy + radius));
 
-    for (int y = ymin; y <= ymax; y++)
+    for (int y = ymin; y < ymax; y++)
     {
-        for (int x = xmin; x <= xmax; x++)
+        const float dy = y + 0.5f - cy;
+        for (int x = xmin; x < xmax; x++)
         {
-            if (x < 0 || x >= canvasWidth || y < 0 || y >= canvasHeight)
-                continue;
-
-            float dist = std::sqrt((float)((x - cx) * (x - cx) + (y - cy) * (y - cy)));
-            float t = dist / radius;
+            const float dx = x + 0.5f - cx;
+            const float t = std::sqrt(dx * dx + dy * dy) / radius;
             if (t >= 1.0f) continue;
 
             // Full opacity inside 'hardness', linear falloff outside it.
-            float opacity = (t <= hardness) ? 1.0f
+            const float opacity = (t <= hardness) ? 1.0f
                 : 1.0f - (t - hardness) / (1.0f - hardness + 1e-6f);
 
             blendPixel(canvasPixels, (y * canvasWidth + x) * 3, color, opacity);

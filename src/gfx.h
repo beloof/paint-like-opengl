@@ -18,5 +18,5 @@ namespace gfx
     void drawCircle(float cx, float cy, float radius, float red, float green, float blue);
     void drawText(int x, int y, const char* text);
     int  textWidth(const char* text);
-    void drawButton(const Rect& r, const char* label, bool active);
+    void drawButton(const Rect& r, const char* label, bool active, bool enabled = true);
 }

@@ -48,12 +48,14 @@ namespace gfx
         return glutBitmapLength(GLUT_BITMAP_HELVETICA_12, (const unsigned char*)text);
     }
 
-    void drawButton(const Rect& r, const char* label, bool active)
+    void drawButton(const Rect& r, const char* label, bool active, bool enabled)
     {
-        if (active) fillRect(r, 0.35f, 0.55f, 0.90f);
-        else        fillRect(r, 0.32f, 0.32f, 0.36f);
+        if (!enabled)     fillRect(r, 0.24f, 0.24f, 0.27f);
+        else if (active)  fillRect(r, 0.35f, 0.55f, 0.90f);
+        else              fillRect(r, 0.32f, 0.32f, 0.36f);
 
-        glColor3f(1, 1, 1);
+        if (enabled) glColor3f(1, 1, 1);
+        else         glColor3f(0.5f, 0.5f, 0.52f);
         drawText(r.x + (r.w - textWidth(label)) / 2, r.y + r.h / 2 - 4, label);
     }
 }

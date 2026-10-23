@@ -26,10 +26,12 @@ Rect Panel::brushRect(int i) const
 }
 Rect Panel::sliderRect() const { return topRect(12, 396, 146, 20); }
 Rect Panel::clearRect() const  { return topRect(12, 548, 146, 32); }
+Rect Panel::undoRect() const   { return topRect(12, 504, 71, 32); }
+Rect Panel::redoRect() const   { return topRect(87, 504, 71, 32); }
 
 // ---------- Drawing ----------
 
-void Panel::draw(const ToolState& tool) const
+void Panel::draw(const ToolState& tool, bool canUndo, bool canRedo) const
 {
     gfx::fillRect({ 0, 0, layout::panelWidth, layout::winH }, 0.20f, 0.20f, 0.23f);
 
@@ -71,6 +73,8 @@ void Panel::draw(const ToolState& tool) const
     int knobX = s.x + (int)(t * s.w);
     gfx::fillRect({ knobX - 5, s.y, 10, s.h }, 0.85f, 0.85f, 0.90f);
 
+    gfx::drawButton(undoRect(), "Undo", false, canUndo);
+    gfx::drawButton(redoRect(), "Redo", false, canRedo);
     gfx::drawButton(clearRect(), "Clear (C)", false);
 }
 
@@ -120,8 +124,9 @@ PanelAction Panel::press(int x, int y, ToolState& tool)
         return PanelAction::None;
     }
 
-    if (clearRect().contains(x, y))
-        return PanelAction::ClearCanvas;
+    if (undoRect().contains(x, y)) return PanelAction::Undo;
+    if (redoRect().contains(x, y)) return PanelAction::Redo;
+    if (clearRect().contains(x, y)) return PanelAction::ClearCanvas;
 
     return PanelAction::None;
 }

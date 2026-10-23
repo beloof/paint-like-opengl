@@ -26,6 +26,13 @@ public:
     Canvas(int width = 800, int height = 600);
 
     const std::vector<unsigned char>& getPixels() const;
+    int width() const { return canvasWidth; }
+    int height() const { return canvasHeight; }
+
+    // Copy a rectangle out of / into the canvas (used by undo/redo).
+    // The rectangle must lie inside the canvas.
+    std::vector<unsigned char> readRect(int x, int y, int w, int h) const;
+    void writeRect(int x, int y, int w, int h, const std::vector<unsigned char>& data);
 
     void setPixel(int x, int y, const unsigned char color[3]);
 

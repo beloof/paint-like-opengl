@@ -1,6 +1,7 @@
 #pragma once
 #include "brush_library.h"
 #include "canvas.h"
+#include "history.h"
 #include "panel.h"
 #include "tool_state.h"
 
@@ -18,12 +19,15 @@ public:
     void mouseButton(int button, int state, int x, int y);
     void mouseMotion(int x, int y);
     void passiveMotion(int x, int y);
-    void keyboard(unsigned char key);
+    void keyboard(unsigned char key, int modifiers);
 
 private:
     void trackMouse(int glutX, int glutY);
     void updateCursor() const;
     void paintLine(int x0, int y0, int x1, int y1);
+    void undo();
+    void redo();
+    void clearCanvasWithHistory();
     void uploadCanvas();
     void drawCanvas() const;
     void drawBrushCursor() const;
@@ -33,6 +37,7 @@ private:
     BrushLibrary brushes;
     ToolState tool;
     Panel panel;
+    History history;
 
     unsigned int canvasTexture = 0; // GL texture mirroring the canvas pixels
 

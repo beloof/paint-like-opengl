@@ -3,7 +3,7 @@
 #include "gfx.h"
 #include "tool_state.h"
 
-enum class PanelAction { None, ClearCanvas };
+enum class PanelAction { None, ClearCanvas, Undo, Redo };
 
 // The side panel: draws itself and turns mouse input into ToolState changes.
 // It knows nothing about the canvas; actions it can't do itself are returned.
@@ -12,7 +12,7 @@ class Panel
 public:
     explicit Panel(const BrushLibrary& brushes) : brushes(brushes) {}
 
-    void draw(const ToolState& tool) const;
+    void draw(const ToolState& tool, bool canUndo, bool canRedo) const;
 
     PanelAction press(int x, int y, ToolState& tool);  // mouse down inside the panel
     void drag(int x, ToolState& tool);                 // mouse moved while pressed
@@ -26,6 +26,8 @@ private:
     Rect brushRect(int i) const;
     Rect sliderRect() const;
     Rect clearRect() const;
+    Rect undoRect() const;
+    Rect redoRect() const;
 
     void setSizeFromMouse(int x, ToolState& tool) const;
 

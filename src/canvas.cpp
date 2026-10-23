@@ -154,3 +154,28 @@ void Canvas::clearCanvas()
     std::fill(pixels.begin(), pixels.end(), 255);
     markDirty(0, 0, canvasWidth, canvasHeight);
 }
+
+// Precondition: the rectangle lies inside the canvas.
+std::vector<unsigned char> Canvas::readRect(int x, int y, int w, int h) const
+{
+    std::vector<unsigned char> out((std::size_t)w * h * 3);
+    for (int row = 0; row < h; row++)
+    {
+        std::copy_n(&pixels[((std::size_t)(y + row) * canvasWidth + x) * 3],
+                    (std::size_t)w * 3,
+                    &out[(std::size_t)row * w * 3]);
+    }
+    return out;
+}
+
+// Precondition: the rectangle lies inside the canvas and data holds w*h*3 bytes.
+void Canvas::writeRect(int x, int y, int w, int h, const std::vector<unsigned char>& data)
+{
+    for (int row = 0; row < h; row++)
+    {
+        std::copy_n(&data[(std::size_t)row * w * 3],
+                    (std::size_t)w * 3,
+                    &pixels[((std::size_t)(y + row) * canvasWidth + x) * 3]);
+    }
+    markDirty(x, y, x + w, y + h);
+}

@@ -82,7 +82,7 @@ void App::display()
 
     uploadCanvas();
     drawCanvas();
-    panel.draw(tool);
+    panel.draw(tool, history.canUndo(), history.canRedo());
     drawBrushCursor();
     glutSwapBuffers();
 }
@@ -146,19 +146,27 @@ void App::mouseButton(int button, int state, int x, int y)
 
     if (state == GLUT_UP)
     {
+        if (stroking) history.commit(canvas); // the stroke is now one undo step
         stroking = false;
         panel.release();
+        glutPostRedisplay();
         return;
     }
 
     if (x < layout::panelWidth)
     {
-        if (panel.press(x, mouseY, tool) == PanelAction::ClearCanvas)
-            canvas.clearCanvas();
+        switch (panel.press(x, mouseY, tool))
+        {
+        case PanelAction::ClearCanvas: clearCanvasWithHistory(); break;
+        case PanelAction::Undo:        undo(); break;
+        case PanelAction::Redo:        redo(); break;
+        case PanelAction::None:        break;
+        }
     }
     else
     {
         stroking = true;
+        history.begin(canvas); // remember the canvas as it is before this stroke
         canvas.beginStroke();
         lastX = x - layout::panelWidth;
         lastY = mouseY;
@@ -191,14 +199,47 @@ void App::passiveMotion(int x, int y)
     glutPostRedisplay(); // keeps the brush cursor following the mouse
 }
 
-void App::keyboard(unsigned char key)
+void App::undo()
 {
+    if (!stroking && history.undo(canvas)) glutPostRedisplay();
+}
+
+void App::redo()
+{
+    if (!stroking && history.redo(canvas)) glutPostRedisplay();
+}
+
+void App::clearCanvasWithHistory()
+{
+    history.begin(canvas);
+    canvas.clearCanvas();
+    history.commit(canvas);
+}
+
+void App::keyboard(unsigned char key, int modifiers)
+{
+    if (modifiers & GLUT_ACTIVE_CTRL)
+    {
+        // With Ctrl held GLUT reports control codes: Ctrl+Z = 26, Ctrl+Y = 25.
+        if (key == 26 || key == 'z' || key == 'Z')
+        {
+            if (modifiers & GLUT_ACTIVE_SHIFT) redo(); // Ctrl+Shift+Z
+            else                               undo();
+        }
+        else if (key == 25 || key == 'y' || key == 'Y')
+        {
+            redo();
+        }
+        glutPostRedisplay();
+        return;
+    }
+
     switch (key)
     {
     case '+': case '=': tool.changeBrushSize(+5); break;
     case '-':           tool.changeBrushSize(-5); break;
     case 'e': tool.eraser = !tool.eraser; break;
-    case 'c': canvas.clearCanvas(); break;
+    case 'c': if (!stroking) clearCanvasWithHistory(); break;
     case 27:  std::exit(0); break; // Esc
     }
     glutPostRedisplay();

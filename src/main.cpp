@@ -13,6 +13,7 @@ static void mouseButton(int b, int s, int x, int y){ app.mouseButton(b, s, x, y)
 static void mouseMotion(int x, int y)              { app.mouseMotion(x, y); }
 static void passiveMotion(int x, int y)            { app.passiveMotion(x, y); }
 static void keyboard(unsigned char k, int, int)    { app.keyboard(k, glutGetModifiers()); }
+static void mouseWheel(int w, int d, int x, int y) { app.mouseWheel(w, d, x, y); }
 
 int main(int argc, char** argv)
 {
@@ -30,6 +31,8 @@ int main(int argc, char** argv)
     glutMotionFunc(mouseMotion);
     glutPassiveMotionFunc(passiveMotion);
     glutKeyboardFunc(keyboard);
+    glutMouseWheelFunc(mouseWheel);
+
 
     glutMainLoop();
     return 0;

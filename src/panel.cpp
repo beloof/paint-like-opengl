@@ -12,7 +12,7 @@
 // Rect from a TOP-based y, so the panel can be laid out top to bottom.
 static Rect topRect(int x, int top, int w, int h)
 {
-    return { x, layout::winH - top - h, w, h };
+    return { x, layout::canvasHeight - top - h, w, h };
 }
 
 Rect Panel::swatchRect(int i) const
@@ -33,11 +33,11 @@ Rect Panel::redoRect() const   { return topRect(87, 504, 71, 32); }
 
 void Panel::draw(const ToolState& tool, bool canUndo, bool canRedo) const
 {
-    gfx::fillRect({ 0, 0, layout::panelWidth, layout::winH }, 0.20f, 0.20f, 0.23f);
+    gfx::fillRect({ 0, 0, layout::panelWidth, layout::canvasHeight }, 0.20f, 0.20f, 0.23f);
 
     // Colors
     glColor3f(0.85f, 0.85f, 0.85f);
-    gfx::drawText(12, layout::winH - 22, "Colors");
+    gfx::drawText(12, layout::canvasHeight - 22, "Colors");
     for (int i = 0; i < paletteCount; i++)
     {
         Rect r = swatchRect(i);
@@ -50,7 +50,7 @@ void Panel::draw(const ToolState& tool, bool canUndo, bool canRedo) const
 
     // Brushes
     glColor3f(0.85f, 0.85f, 0.85f);
-    gfx::drawText(12, layout::winH - 206, "Brush");
+    gfx::drawText(12, layout::canvasHeight - 206, "Brush");
     for (int i = 0; i < brushes.count(); i++)
     {
         Rect r = brushRect(i);
@@ -65,7 +65,7 @@ void Panel::draw(const ToolState& tool, bool canUndo, bool canRedo) const
     char label[32];
     std::snprintf(label, sizeof(label), "Size: %d", tool.brushSize);
     glColor3f(0.85f, 0.85f, 0.85f);
-    gfx::drawText(12, layout::winH - 386, label);
+    gfx::drawText(12, layout::canvasHeight - 386, label);
 
     Rect s = sliderRect();
     gfx::fillRect({ s.x, s.y + s.h / 2 - 3, s.w, 6 }, 0.40f, 0.40f, 0.45f);

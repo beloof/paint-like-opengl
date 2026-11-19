@@ -41,6 +41,7 @@ void App::initGL()
     winH = glutGet(GLUT_WINDOW_HEIGHT);
     view = layout::fitView(winW, winH);
     viewAutoFit = true;
+    panel.setViewHeight(winH);
 
     glViewport(0, 0, winW, winH);
     glMatrixMode(GL_PROJECTION);
@@ -130,6 +131,7 @@ void App::reshape(int w, int h)
     if (w <= 0 || h <= 0) return;         // minimized
     winW = w;
     winH = h;
+    panel.setViewHeight(h);
 
     if (viewAutoFit)
         view = layout::fitView(winW, winH);
@@ -319,7 +321,14 @@ bool App::windowToCanvas(int wx, int wy, int& cx, int& cy) const
 
 void App::mouseWheel(int /*wheel*/, int direction, int x, int y)
 {
-    if (x < layout::panelWidth) return;
+    if (x < layout::panelWidth)
+    {
+        // Wheel over the sidebar scrolls it (only matters when the window is
+        // shorter than the panel content). Wheel up = toward the top widgets.
+        panel.scrollBy(direction > 0 ? -40 : 40);
+        glutPostRedisplay();
+        return;
+    }
 
     // Anchor the canvas point under the cursor while zooming.
     const float cx = view.toCanvasX((float)x);

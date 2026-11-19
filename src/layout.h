@@ -1,7 +1,9 @@
 #pragma once
 
 // Window = [ side panel | canvas view ]
-// The panel is fixed at 170x600 (glued to the canvas's vertical extent).
+// The panel is 170 wide and fills the window height; its widgets occupy a
+// 600-tall content area anchored to the top, which scrolls when the window is
+// shorter than that (see Panel::scrollBy).
 // The canvas buffer is fixed at 800x600; the *view* of it (zoom + pan + fit)
 // adapts to the window. Zoom/pan live in View so they don't touch the buffer.
 

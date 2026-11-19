@@ -9,10 +9,23 @@
 
 // ---------- Layout ----------
 
-// Rect from a TOP-based y, so the panel can be laid out top to bottom.
-static Rect topRect(int x, int top, int w, int h)
+// Widgets use TOP-based y (see topRect in panel.h), measured from the top of
+// the window and shifted by the scroll offset. The content is canvasHeight tall.
+
+void Panel::setViewHeight(int h)
 {
-    return { x, layout::canvasHeight - top - h, w, h };
+    viewHeight = h;
+    scrollBy(0); // re-clamp
+}
+
+int Panel::maxScroll() const
+{
+    return std::max(0, layout::canvasHeight - viewHeight);
+}
+
+void Panel::scrollBy(int dy)
+{
+    scroll = std::max(0, std::min(maxScroll(), scroll + dy));
 }
 
 Rect Panel::swatchRect(int i) const
@@ -33,11 +46,12 @@ Rect Panel::redoRect() const   { return topRect(87, 504, 71, 32); }
 
 void Panel::draw(const ToolState& tool, bool canUndo, bool canRedo) const
 {
-    gfx::fillRect({ 0, 0, layout::panelWidth, layout::canvasHeight }, 0.20f, 0.20f, 0.23f);
+    // Background covers the whole sidebar column, whatever the window height.
+    gfx::fillRect({ 0, 0, layout::panelWidth, viewHeight }, 0.20f, 0.20f, 0.23f);
 
     // Colors
     glColor3f(0.85f, 0.85f, 0.85f);
-    gfx::drawText(12, layout::canvasHeight - 22, "Colors");
+    gfx::drawText(12, topY(22), "Colors");
     for (int i = 0; i < paletteCount; i++)
     {
         Rect r = swatchRect(i);
@@ -50,12 +64,16 @@ void Panel::draw(const ToolState& tool, bool canUndo, bool canRedo) const
 
     // Brushes
     glColor3f(0.85f, 0.85f, 0.85f);
-    gfx::drawText(12, layout::canvasHeight - 206, "Brush");
+    gfx::drawText(12, topY(206), "Brush");
     for (int i = 0; i < brushes.count(); i++)
     {
         Rect r = brushRect(i);
         gfx::fillRect(r, 1, 1, 1);
-        glRasterPos2i(r.x + 2, r.y + 2);
+        // Set the raster position via a valid point plus a glBitmap offset, so
+        // thumbnails partly scrolled off-window are clipped, not dropped entirely
+        // (glRasterPos outside the viewport would invalidate the whole image).
+        glRasterPos2i(0, 0);
+        glBitmap(0, 0, 0, 0, (float)(r.x + 2), (float)(r.y + 2), nullptr);
         glDrawPixels(brushThumbSize, brushThumbSize, GL_RGB, GL_UNSIGNED_BYTE, brushes.thumb(i).data());
         if (i == tool.brushIndex)
             gfx::outlineRect(r, 2, 0.35f, 0.65f, 1.0f);
@@ -65,7 +83,7 @@ void Panel::draw(const ToolState& tool, bool canUndo, bool canRedo) const
     char label[32];
     std::snprintf(label, sizeof(label), "Size: %d", tool.brushSize);
     glColor3f(0.85f, 0.85f, 0.85f);
-    gfx::drawText(12, layout::canvasHeight - 386, label);
+    gfx::drawText(12, topY(386), label);
 
     Rect s = sliderRect();
     gfx::fillRect({ s.x, s.y + s.h / 2 - 3, s.w, 6 }, 0.40f, 0.40f, 0.45f);
@@ -76,6 +94,17 @@ void Panel::draw(const ToolState& tool, bool canUndo, bool canRedo) const
     gfx::drawButton(undoRect(), "Undo", false, canUndo);
     gfx::drawButton(redoRect(), "Redo", false, canRedo);
     gfx::drawButton(clearRect(), "Clear (C)", false);
+
+    // Scroll indicator on the panel's right edge, only when content overflows.
+    const int range = maxScroll();
+    if (range > 0)
+    {
+        const int trackH = viewHeight;
+        const int thumbH = std::max(20, trackH * viewHeight / layout::canvasHeight);
+        const int thumbTop = (trackH - thumbH) * scroll / range;
+        gfx::fillRect({ layout::panelWidth - 5, viewHeight - thumbTop - thumbH, 3, thumbH },
+                      0.55f, 0.55f, 0.60f);
+    }
 }
 
 // ---------- Input ----------

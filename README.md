@@ -22,7 +22,7 @@ A Paint-style drawing application written from scratch in **C++17** with **OpenG
 |---|---|
 | Left mouse | Paint |
 | Middle mouse drag | Pan |
-| Mouse wheel | Zoom (anchored at the cursor) |
+| Mouse wheel | Zoom (anchored at the cursor); over the tool panel, scrolls it when the window is short |
 | `Ctrl+Z` / `Ctrl+Y` or `Ctrl+Shift+Z` | Undo / redo |
 | `+` / `-` | Brush size ±5 |
 | `E` | Toggle eraser |

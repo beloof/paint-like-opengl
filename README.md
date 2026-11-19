@@ -1,6 +1,6 @@
 # Paint-like OpenGL
 
-A Paint-style drawing application written from scratch in **C++17** with **OpenGL / freeglut**: a CPU canvas streamed to an OpenGL texture, a brush system with eight brush tips, undo/redo, and zoom and pan.
+A Paint-style drawing application written from scratch in **C++17** with **OpenGL / freeglut**: a CPU canvas streamed to an OpenGL texture, a brush system with eight brush tips, undo/redo, zoom and pan, and PNG open/save.
 
 ![Demo: drawing with several brushes, undo/redo and window resize](docs/demo.gif)
 
@@ -14,7 +14,7 @@ A Paint-style drawing application written from scratch in **C++17** with **OpenG
 - **Dirty-rectangle uploads**: the canvas tracks the region changed since the last frame, and only that region is re-uploaded with `glTexSubImage2D`.
 - **Undo / redo with minimal memory**: each edit stores only the smallest rectangle that changed. Undo and redo swap that rectangle with the canvas, and history is capped by both step count and total bytes.
 - **View**: zoom anchored at the cursor, middle-mouse panning, fit-to-window, and window resize that keeps the view clamped to the canvas.
-- **Open / save**: saves the canvas as PNG through a small built-in encoder (DEFLATE with fixed Huffman codes and LZ77 matching, CRC-32 and Adler-32), so no image-writing library is needed. A typical drawing compresses to a few tens of KB. Opens PNG, JPEG, BMP, TGA and GIF via stb_image. Images larger than the canvas are scaled down to fit, smaller ones are centred, and transparency is flattened onto white. Opening is undoable. Uses the native Windows Open/Save dialogs.
+- **Open / save**: saves the canvas as PNG through a small built-in encoder (DEFLATE with fixed Huffman codes and LZ77 matching, CRC-32 and Adler-32), so no image-writing library is needed. A typical drawing compresses to a few tens of KB. Opens PNG, JPEG, BMP, TGA and GIF via stb_image. Images larger than the canvas are scaled down to fit, smaller ones are centred, and transparency is flattened onto white. Opening is undoable. Uses the native Windows Open/Save dialogs; on other platforms it reads and writes `canvas.png` in the working directory.
 - **Tool panel**: 12-colour palette, eraser, brush size slider, brush picker, open / save, undo / redo / clear buttons.
 
 ## Controls

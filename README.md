@@ -14,7 +14,8 @@ A Paint-style drawing application written from scratch in **C++17** with **OpenG
 - **Dirty-rectangle uploads**: the canvas tracks the region changed since the last frame, and only that region is re-uploaded with `glTexSubImage2D`.
 - **Undo / redo with minimal memory**: each edit stores only the smallest rectangle that changed. Undo and redo swap that rectangle with the canvas, and history is capped by both step count and total bytes.
 - **View**: zoom anchored at the cursor, middle-mouse panning, fit-to-window, and window resize that keeps the view clamped to the canvas.
-- **Tool panel**: 12-colour palette, eraser, brush size slider, brush picker, undo / redo / clear buttons.
+- **Open / save**: saves the canvas as PNG through a small built-in encoder (DEFLATE with fixed Huffman codes and LZ77 matching, CRC-32 and Adler-32), so no image-writing library is needed. A typical drawing compresses to a few tens of KB. Opens PNG, JPEG, BMP, TGA and GIF via stb_image. Images larger than the canvas are scaled down to fit, smaller ones are centred, and transparency is flattened onto white. Opening is undoable. Uses the native Windows Open/Save dialogs.
+- **Tool panel**: 12-colour palette, eraser, brush size slider, brush picker, open / save, undo / redo / clear buttons.
 
 ## Controls
 
@@ -24,6 +25,7 @@ A Paint-style drawing application written from scratch in **C++17** with **OpenG
 | Middle mouse drag | Pan |
 | Mouse wheel | Zoom (anchored at the cursor); over the tool panel, scrolls it when the window is short |
 | `Ctrl+Z` / `Ctrl+Y` or `Ctrl+Shift+Z` | Undo / redo |
+| `Ctrl+O` / `Ctrl+S` | Open image / save as PNG |
 | `+` / `-` | Brush size ±5 |
 | `E` | Toggle eraser |
 | `C` | Clear canvas (undoable) |
@@ -40,6 +42,8 @@ A Paint-style drawing application written from scratch in **C++17** with **OpenG
 | `src/brush_library.*` | Loads the brush tips from `assets/brushes` |
 | `src/history.*` | Rectangle-patch undo/redo with memory limits |
 | `src/panel.*`, `src/tool_state.*` | Tool panel UI and selected-tool state |
+| `src/image_io.*` | PNG encoder, image loading, fit-to-canvas scaling |
+| `src/file_dialog.*` | Native Open/Save dialogs and error messages |
 | `src/layout.h`, `src/gfx.*` | Layout constants and small drawing helpers |
 | `tools/generate_brushes.py` | Procedural brush-tip generation |
 

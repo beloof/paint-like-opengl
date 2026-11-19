@@ -1,4 +1,6 @@
 #pragma once
+#include <string>
+
 #include "brush_library.h"
 #include "canvas.h"
 #include "history.h"
@@ -29,6 +31,9 @@ private:
     void undo();
     void redo();
     void clearCanvasWithHistory();
+    void openImage();
+    void saveImage();
+    void updateTitle() const;
     void uploadCanvas();
     void drawCanvas() const;
     void drawBrushCursor() const;
@@ -43,6 +48,7 @@ private:
     History history;
 
     unsigned int canvasTexture = 0;
+    std::string filePath;         // last opened/saved file (UTF-8), empty if none
 
     bool stroking = false;
     int lastX = -1, lastY = -1;

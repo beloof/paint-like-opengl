@@ -4,7 +4,7 @@
 #include "layout.h"
 #include "tool_state.h"
 
-enum class PanelAction { None, ClearCanvas, Undo, Redo };
+enum class PanelAction { None, ClearCanvas, Undo, Redo, Open, Save };
 
 // The side panel: draws itself and turns mouse input into ToolState changes.
 // It knows nothing about the canvas; actions it can't do itself are returned.
@@ -40,6 +40,8 @@ private:
     Rect clearRect() const;
     Rect undoRect() const;
     Rect redoRect() const;
+    Rect openRect() const;
+    Rect saveRect() const;
 
     void setSizeFromMouse(int x, ToolState& tool) const;
 

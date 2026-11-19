@@ -1,9 +1,12 @@
 #include "app.h"
 
 #include <GL/freeglut.h>
+#include <algorithm>
 #include <cstdlib>
 
+#include "file_dialog.h"
 #include "gfx.h"
+#include "image_io.h"
 #include "layout.h"
 
 App::App()
@@ -205,6 +208,8 @@ void App::mouseButton(int button, int state, int x, int y)
         case PanelAction::ClearCanvas: clearCanvasWithHistory(); break;
         case PanelAction::Undo:        undo(); break;
         case PanelAction::Redo:        redo(); break;
+        case PanelAction::Open:        openImage(); break;
+        case PanelAction::Save:        saveImage(); break;
         case PanelAction::None:        break;
         }
     }
@@ -274,6 +279,75 @@ void App::clearCanvasWithHistory()
     history.commit(canvas);
 }
 
+// ---------- Files ----------
+
+// The canvas stores rows bottom-up (GL texture order); image files are top-down.
+static std::vector<unsigned char> flipRows(const std::vector<unsigned char>& rgb, int w, int h)
+{
+    std::vector<unsigned char> out(rgb.size());
+    const std::size_t stride = (std::size_t)w * 3;
+    for (int y = 0; y < h; y++)
+        std::copy_n(&rgb[(std::size_t)y * stride], stride, &out[(std::size_t)(h - 1 - y) * stride]);
+    return out;
+}
+
+void App::openImage()
+{
+    if (stroking) return;
+    const std::string path = filedialog::openImage();
+    if (path.empty()) return;
+
+    int w = 0, h = 0;
+    std::vector<unsigned char> rgb;
+    std::string error;
+    if (!imageio::loadImage(path, w, h, rgb, error))
+    {
+        filedialog::showError("Open failed", error);
+        return;
+    }
+
+    // The canvas has a fixed size: larger images are scaled down to fit,
+    // smaller ones are centred on white. Undoable like any other edit.
+    const int cw = canvas.width(), ch = canvas.height();
+    const std::vector<unsigned char> fitted = imageio::fitOnto(rgb, w, h, cw, ch);
+    history.begin(canvas);
+    canvas.writeRect(0, 0, cw, ch, flipRows(fitted, cw, ch));
+    history.commit(canvas);
+
+    filePath = path;
+    updateTitle();
+    glutPostRedisplay();
+}
+
+void App::saveImage()
+{
+    if (stroking) return;
+    const std::string path = filedialog::saveImage(filePath.empty() ? "untitled.png" : filePath);
+    if (path.empty()) return;
+
+    const int cw = canvas.width(), ch = canvas.height();
+    std::string error;
+    if (!imageio::savePng(path, cw, ch, flipRows(canvas.getPixels(), cw, ch), error))
+    {
+        filedialog::showError("Save failed", error);
+        return;
+    }
+
+    filePath = path;
+    updateTitle();
+}
+
+void App::updateTitle() const
+{
+    std::string title = "Paint-like OpenGL";
+    if (!filePath.empty())
+    {
+        const std::size_t slash = filePath.find_last_of("/\\");
+        title = filePath.substr(slash == std::string::npos ? 0 : slash + 1) + " - " + title;
+    }
+    glutSetWindowTitle(title.c_str());
+}
+
 void App::keyboard(unsigned char key, int modifiers)
 {
     if (modifiers & GLUT_ACTIVE_CTRL)
@@ -287,6 +361,14 @@ void App::keyboard(unsigned char key, int modifiers)
         else if (key == 25 || key == 'y' || key == 'Y')
         {
             redo();
+        }
+        else if (key == 19 || key == 's' || key == 'S') // Ctrl+S
+        {
+            saveImage();
+        }
+        else if (key == 15 || key == 'o' || key == 'O') // Ctrl+O
+        {
+            openImage();
         }
         glutPostRedisplay();
         return;
